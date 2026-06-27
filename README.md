@@ -14,10 +14,13 @@ clients resume from the current snapshot.
   `:atomics` module ([`src/roundtable_seq.erl`](src/roundtable_seq.erl)); turn
   order is an Erlang `:queue` ring ([`Roundtable.Initiative`](lib/roundtable/initiative.ex)).
 - **Soft-real-time transport.** Phoenix Channels + Presence + PubSub.
+- **Survives a node dying.** Tables are addressable cluster-wide (Horde) and each
+  table's state is replicated across the cluster (DeltaCrdt), so a session lives
+  through an ungraceful `kill -9` of the node it ran on — see below.
 
-This cycle implements milestones **M0–M4** (single node). Distribution
-(Horde/libcluster/`:pg`), load & chaos testing, observability panels, and
-release packaging are M5–M8 (see the project plan).
+Implemented milestones: **M0–M5** (single-node real-time core + distribution and
+node-kill survival). Load & chaos testing, observability panels, and release
+packaging are M6–M8.
 
 ## Architecture at a glance
 
@@ -69,6 +72,33 @@ On join the client receives a `"state"` snapshot (`%{state, seq}`); every
 accepted intent broadcasts a `"delta"` carrying a strictly-monotonic `seq`.
 Order/dedupe deltas by `seq` on the client.
 
+## Distribution & node-kill survival (M5)
+
+Tables are addressable cluster-wide via `Horde.Registry`/`Horde.DynamicSupervisor`,
+and each table's authoritative snapshot is replicated across the cluster on every
+accepted intent via a `DeltaCrdt` store ([`Roundtable.StateReplica`](lib/roundtable/state_replica.ex)).
+When a node dies, Horde restarts its sessions on a surviving node and each restores
+`{players, initiative, last_seq}` from the replica — the sequence continues without
+collision. (`Phoenix.PubSub` already fans out deltas cluster-wide, so no extra wiring
+is needed for clients on other nodes.)
+
+Run a 3-node cluster (auto-formed via libcluster Epmd on the compose network):
+
+```bash
+docker compose -f docker-compose.cluster.yml up    # nodes on :4001, :4002, :4003
+```
+
+Kill-survival demo:
+1. Drive a table on any node (join, set initiative, advance a turn).
+2. `docker compose -f docker-compose.cluster.yml kill -s SIGKILL node3` — kill the
+   node holding the session, ungracefully.
+3. Read the table from another node: the roster, initiative, and current turn are
+   intact and the sequence continues.
+
+The restore + seq-continuity mechanism is also covered by an automated single-node
+test (`test/roundtable/session_test.exs` — kill the session process, Horde restarts
+it, state is restored from the replica).
+
 ## Layout
 
 ```
@@ -76,9 +106,11 @@ src/roundtable_seq.erl              native Erlang :atomics sequence counters
 lib/roundtable/
   initiative.ex                     :queue turn-order ring (pure)
   table_state.ex                    authoritative struct + apply_intent/2 (pure)
+  state_replica.ex                  DeltaCrdt-backed cluster snapshot store (M5)
   session.ex                        facade: find_or_start / apply_intent / get_state
-  session/{registry,supervisor,server,seq}.ex
+  session/{registry,supervisor,server,seq}.ex   registry/supervisor backed by Horde (M5)
 lib/roundtable_web/
   channels/{user_socket,table_channel}.ex
   presence.ex
+docker-compose.cluster.yml          3-node demo cluster (M5)
 ```

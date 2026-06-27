@@ -23,6 +23,21 @@ end
 config :roundtable, RoundtableWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# Clustering for the multi-node demo: set ROUNDTABLE_CLUSTER=epmd and start each
+# node with a short name matching its hostname, e.g. on host `node1`:
+# `elixir --sname roundtable --cookie roundtable -S mix phx.server` (becomes
+# roundtable@node1). Epmd connects the named hosts directly (Docker bridge networks
+# don't pass the UDP multicast that the Gossip strategy needs).
+if System.get_env("ROUNDTABLE_CLUSTER") == "epmd" do
+  config :roundtable, :cluster_topologies,
+    epmd: [
+      strategy: Cluster.Strategy.Epmd,
+      config: [
+        hosts: [:roundtable@node1, :roundtable@node2, :roundtable@node3]
+      ]
+    ]
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

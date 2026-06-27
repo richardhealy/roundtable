@@ -69,7 +69,6 @@ defmodule Roundtable.MixProject do
       {:horde, "~> 0.9"},
       {:libcluster, "~> 3.3"},
       {:delta_crdt, "~> 0.6"},
-      {:local_cluster, "~> 2.0", only: [:test]},
       {:stream_data, "~> 1.1", only: [:dev, :test]},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}

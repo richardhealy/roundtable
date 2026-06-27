@@ -1,0 +1,46 @@
+services:
+  node1:
+    build: { context: ., dockerfile: Dockerfile.dev }
+    hostname: node1
+    command: elixir --sname roundtable --cookie roundtable -S mix phx.server
+    environment:
+      PORT: "4000"
+      ROUNDTABLE_CLUSTER: epmd
+    ports: ["4001:4000"]
+    volumes:
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+    working_dir: /app
+
+  node2:
+    build: { context: ., dockerfile: Dockerfile.dev }
+    hostname: node2
+    command: elixir --sname roundtable --cookie roundtable -S mix phx.server
+    environment:
+      PORT: "4000"
+      ROUNDTABLE_CLUSTER: epmd
+    ports: ["4002:4000"]
+    volumes:
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+    working_dir: /app
+
+  node3:
+    build: { context: ., dockerfile: Dockerfile.dev }
+    hostname: node3
+    command: elixir --sname roundtable --cookie roundtable -S mix phx.server
+    environment:
+      PORT: "4000"
+      ROUNDTABLE_CLUSTER: epmd
+    ports: ["4003:4000"]
+    volumes:
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+    working_dir: /app
+
+volumes:
+  deps:
+  build:

@@ -7,17 +7,26 @@ defmodule Roundtable.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      RoundtableWeb.Telemetry,
-      {DNSCluster, query: Application.get_env(:roundtable, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Roundtable.PubSub},
-      Roundtable.StateReplica,
-      Roundtable.Session.Registry,
-      Roundtable.Session.Supervisor,
-      RoundtableWeb.Presence,
-      # Start to serve requests, typically the last entry
-      RoundtableWeb.Endpoint
-    ]
+    topologies = Application.get_env(:roundtable, :cluster_topologies, [])
+
+    cluster_children =
+      if topologies == [],
+        do: [],
+        else: [{Cluster.Supervisor, [topologies, [name: Roundtable.ClusterSupervisor]]}]
+
+    children =
+      cluster_children ++
+        [
+          RoundtableWeb.Telemetry,
+          {DNSCluster, query: Application.get_env(:roundtable, :dns_cluster_query) || :ignore},
+          {Phoenix.PubSub, name: Roundtable.PubSub},
+          Roundtable.StateReplica,
+          Roundtable.Session.Registry,
+          Roundtable.Session.Supervisor,
+          RoundtableWeb.Presence,
+          # Start to serve requests, typically the last entry
+          RoundtableWeb.Endpoint
+        ]
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options

@@ -11,6 +11,7 @@ defmodule Roundtable.Application do
       RoundtableWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:roundtable, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Roundtable.PubSub},
+      Roundtable.StateReplica,
       Roundtable.Session.Registry,
       Roundtable.Session.Supervisor,
       RoundtableWeb.Presence,

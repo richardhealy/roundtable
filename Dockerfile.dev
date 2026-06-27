@@ -1,4 +1,7 @@
 FROM elixir:1.18
+# inotify-tools enables Phoenix live code reload in the dev container
+RUN apt-get update && apt-get install -y --no-install-recommends inotify-tools \
+  && rm -rf /var/lib/apt/lists/*
 RUN mix local.hex --force && mix local.rebar --force
 WORKDIR /app
 CMD ["mix", "phx.server"]

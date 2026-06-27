@@ -4,6 +4,13 @@ defmodule Roundtable.Session.SeqTest do
 
   alias Roundtable.Session.Seq
 
+  test "set/2 seeds the counter so next continues from value+1" do
+    ref = Seq.new()
+    assert Seq.set(ref, 5) == :ok
+    assert Seq.current(ref) == 5
+    assert Seq.next(ref) == 6
+  end
+
   test "new/0 starts at 0 and next/1 begins at 1" do
     ref = Seq.new()
     assert Seq.current(ref) == 0

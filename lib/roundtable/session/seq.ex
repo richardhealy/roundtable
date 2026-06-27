@@ -19,4 +19,8 @@ defmodule Roundtable.Session.Seq do
   @doc "Read the current sequence number without consuming one."
   @spec current(ref()) :: non_neg_integer()
   def current(ref), do: :roundtable_seq.current(ref)
+
+  @doc "Seed the counter to `value` (used when restoring a session's state)."
+  @spec set(ref(), non_neg_integer()) :: :ok
+  def set(ref, value), do: :atomics.put(ref, 1, value)
 end

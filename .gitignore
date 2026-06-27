@@ -41,3 +41,6 @@ npm-debug.log
 
 # dialyzer PLT cache
 /priv/plts/
+
+# local design notes (not pushed)
+/docs/

@@ -9,7 +9,7 @@ defmodule Roundtable.StateReplica do
   use GenServer
 
   @crdt __MODULE__.Crdt
-  @sync_interval 50
+  @sync_interval 100
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts), do: GenServer.start_link(__MODULE__, :ok, name: __MODULE__)

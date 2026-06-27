@@ -38,3 +38,6 @@ npm-debug.log
 
 # project spec (kept local)
 /spec.md
+
+# dialyzer PLT cache
+/priv/plts/

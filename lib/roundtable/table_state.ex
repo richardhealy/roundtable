@@ -87,6 +87,20 @@ defmodule Roundtable.TableState do
     {:ok, %{ts | initiative: init}, %{type: type, payload: payload}}
   end
 
+  @doc "Reconstruct a table from a `snapshot/1` map (used to restore a session)."
+  @spec from_snapshot(map()) :: t()
+  def from_snapshot(%{table_id: id, players: players, last_seq: seq, initiative: init}) do
+    %__MODULE__{
+      table_id: id,
+      players: players,
+      last_seq: seq,
+      initiative: restore_initiative(init)
+    }
+  end
+
+  defp restore_initiative(nil), do: nil
+  defp restore_initiative(%{order: order, round: round}), do: Initiative.restore(order, round)
+
   @doc "A JSON-serializable snapshot of the authoritative state."
   @spec snapshot(t()) :: map()
   def snapshot(%__MODULE__{} = ts) do

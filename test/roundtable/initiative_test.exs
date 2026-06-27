@@ -28,6 +28,21 @@ defmodule Roundtable.InitiativeTest do
     assert Initiative.round(Initiative.rewind(i2)) == 1
   end
 
+  test "restore/2 round-trips a snapshot, preserving rotation and round" do
+    {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}, {"cat", 5}])
+    advanced = i0 |> Initiative.advance() |> Initiative.advance()
+    snap_order = Initiative.to_list(advanced)
+    restored = Initiative.restore(snap_order, Initiative.round(advanced))
+    assert Initiative.to_list(restored) == snap_order
+
+    assert Initiative.current(restored).combatant_id ==
+             Initiative.current(advanced).combatant_id
+
+    assert Initiative.round(restored) == Initiative.round(advanced)
+    # leader (highest roll) recovered so round bumps correctly on next wrap
+    assert Initiative.current(Initiative.advance(restored)).combatant_id == "amy"
+  end
+
   property "advancing `size` times returns to the start; multiset preserved" do
     check all(
             entries <-

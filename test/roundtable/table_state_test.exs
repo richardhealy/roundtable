@@ -2,6 +2,7 @@ defmodule Roundtable.TableStateTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
+  alias Roundtable.Initiative
   alias Roundtable.TableState
 
   test "join adds a player and emits a delta; re-join is a no-op" do
@@ -42,6 +43,22 @@ defmodule Roundtable.TableStateTest do
     assert delta.payload.current == "bob"
     assert {:ok, _ts, d2} = TableState.apply_intent(ts, :rewind_turn)
     assert d2.payload.current == "amy"
+  end
+
+  test "from_snapshot/1 inverts snapshot/1" do
+    ts = TableState.new("t1")
+    {:ok, ts, _} = TableState.apply_intent(ts, {:join, "amy", %{x: 1}})
+    {:ok, ts, _} = TableState.apply_intent(ts, {:set_initiative, [{"amy", 18}, {"bob", 9}]})
+    {:ok, ts, _} = TableState.apply_intent(ts, :advance_turn)
+    ts = %{ts | last_seq: 3}
+    restored = TableState.from_snapshot(TableState.snapshot(ts))
+    assert restored.players == ts.players
+    assert restored.last_seq == 3
+
+    assert Initiative.current(restored.initiative).combatant_id ==
+             Initiative.current(ts.initiative).combatant_id
+
+    assert TableState.snapshot(restored) == TableState.snapshot(ts)
   end
 
   property "any sequence of valid intents keeps players a map and initiative well-formed" do

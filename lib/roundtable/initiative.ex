@@ -45,6 +45,17 @@ defmodule Roundtable.Initiative do
     end
   end
 
+  @doc "Rebuild a ring from a snapshot's rotation order (current first) and round."
+  @spec restore([entry()], pos_integer()) :: t()
+  def restore([_ | _] = order, round) do
+    %__MODULE__{
+      queue: :queue.from_list(order),
+      round: round,
+      size: length(order),
+      leader: Enum.max_by(order, & &1.roll).combatant_id
+    }
+  end
+
   @doc "The combatant whose turn it currently is."
   @spec current(t()) :: entry()
   def current(%__MODULE__{queue: q}) do

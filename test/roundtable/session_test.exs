@@ -59,6 +59,41 @@ defmodule Roundtable.SessionTest do
     assert {:ok, 3} = Session.apply_intent(id, :advance_turn)
   end
 
+  test "applying an intent emits a telemetry stop event with its result", %{id: id} do
+    test_pid = self()
+
+    :telemetry.attach(
+      {__MODULE__, :intent, make_ref()},
+      [:roundtable, :session, :intent, :stop],
+      fn _n, meas, meta, _ -> send(test_pid, {:intent, meas, meta}) end,
+      nil
+    )
+
+    {:ok, 1} = Session.apply_intent(id, {:join, "amy", %{}})
+    assert_receive {:intent, %{duration: d}, %{type: :join, result: :accepted}} when is_integer(d)
+
+    {:ok, :noop} = Session.apply_intent(id, {:join, "amy", %{}})
+    assert_receive {:intent, _meas, %{type: :join, result: :noop}}
+
+    {:error, :not_a_player} = Session.apply_intent(id, {:leave, "zzz"})
+    assert_receive {:intent, _meas, %{type: :leave, result: :rejected}}
+  end
+
+  test "starting a session emits a started event; a broadcast emits a delta event", %{id: id} do
+    test_pid = self()
+
+    :telemetry.attach_many(
+      {__MODULE__, :lifecycle, make_ref()},
+      [[:roundtable, :session, :started], [:roundtable, :delta, :broadcast]],
+      fn name, _meas, meta, _ -> send(test_pid, {name, meta}) end,
+      nil
+    )
+
+    {:ok, 1} = Session.apply_intent(id, {:join, "amy", %{}})
+    assert_receive {[:roundtable, :session, :started], %{restored: false}}
+    assert_receive {[:roundtable, :delta, :broadcast], %{type: :player_joined}}
+  end
+
   test "crashing one table does not disturb another", %{id: id} do
     other = id <> "-other"
     {:ok, pid_a} = Session.find_or_start(id)

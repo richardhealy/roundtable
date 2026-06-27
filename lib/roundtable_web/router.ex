@@ -37,7 +37,9 @@ defmodule RoundtableWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: RoundtableWeb.Telemetry
+      live_dashboard "/dashboard",
+        metrics: RoundtableWeb.Telemetry,
+        additional_pages: [sessions: RoundtableWeb.SessionsDashboardPage]
     end
   end
 end

@@ -37,12 +37,24 @@ defmodule Roundtable.Telemetry do
     )
   end
 
-  @doc "Number of active session processes."
+  @doc """
+  Number of active session processes.
+
+  Returns 0 when the session supervisor is not running (e.g. the periodic poller
+  fires during boot before Horde has started, or during shutdown). The gauge
+  self-corrects on the next measurement.
+  """
   @spec active_count() :: non_neg_integer()
   def active_count do
-    Session.Supervisor
-    |> Horde.DynamicSupervisor.count_children()
-    |> Map.get(:active, 0)
+    case Process.whereis(Session.Supervisor) do
+      nil ->
+        0
+
+      _pid ->
+        Session.Supervisor
+        |> Horde.DynamicSupervisor.count_children()
+        |> Map.get(:active, 0)
+    end
   end
 
   @doc "Emit the active-session count as a periodic gauge measurement."

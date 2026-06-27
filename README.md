@@ -18,9 +18,9 @@ clients resume from the current snapshot.
   table's state is replicated across the cluster (DeltaCrdt), so a session lives
   through an ungraceful `kill -9` of the node it ran on — see below.
 
-Implemented milestones: **M0–M5** (single-node real-time core + distribution and
-node-kill survival). Load & chaos testing, observability panels, and release
-packaging are M6–M8.
+Implemented milestones: **M0–M6** (single-node real-time core, distribution and
+node-kill survival, and observability). Load & chaos testing and release packaging
+are M7–M8.
 
 ## Architecture at a glance
 
@@ -98,6 +98,22 @@ Kill-survival demo:
 The restore + seq-continuity mechanism is also covered by an automated single-node
 test (`test/roundtable/session_test.exs` — kill the session process, Horde restarts
 it, state is restored from the replica).
+
+## Observability (M6)
+
+The hot paths emit Telemetry — intent latency + result, session started/restored,
+delta throughput — registered as metrics on the dev LiveDashboard:
+
+```bash
+make server   # then open http://localhost:4000/dev/dashboard
+```
+
+- **Metrics tab:** intent latency and counts by result (accepted/rejected/noop),
+  deltas by type, session starts broken out by `restored` (so node-kill restores
+  show up), and a live active-sessions gauge.
+- **Sessions tab:** a live table of every active table — id, players, current turn,
+  round, last seq — read straight from the replicated CRDT
+  ([`RoundtableWeb.SessionsDashboardPage`](lib/roundtable_web/sessions_dashboard_page.ex)).
 
 ## Layout
 

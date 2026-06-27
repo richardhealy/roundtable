@@ -43,6 +43,22 @@ defmodule Roundtable.SessionTest do
     assert Map.has_key?(snapshot.players, "amy")
   end
 
+  test "a killed session restarts and restores prior state, continuing seq", %{id: id} do
+    {:ok, 1} = Session.apply_intent(id, {:join, "amy", %{}})
+    {:ok, 2} = Session.apply_intent(id, {:set_initiative, [{"amy", 18}, {"bob", 9}]})
+    assert Roundtable.StateReplica.get(id).last_seq == 2
+
+    # kill the running session; Horde restarts it; it restores from the replica
+    pid = Roundtable.Session.Registry.whereis(id)
+    Process.exit(pid, :kill)
+    Process.sleep(200)
+
+    {state, seq} = Session.get_state(id)
+    assert seq == 2
+    assert Map.has_key?(state.players, "amy")
+    assert {:ok, 3} = Session.apply_intent(id, :advance_turn)
+  end
+
   test "crashing one table does not disturb another", %{id: id} do
     other = id <> "-other"
     {:ok, pid_a} = Session.find_or_start(id)

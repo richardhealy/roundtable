@@ -28,7 +28,19 @@ defmodule Roundtable.Session.Server do
 
   @impl true
   def init(table_id) do
-    {:ok, %{table_state: TableState.new(table_id), seq: Seq.new()}}
+    seq = Seq.new()
+
+    table_state =
+      case Roundtable.StateReplica.get(table_id) do
+        nil ->
+          TableState.new(table_id)
+
+        snapshot ->
+          Seq.set(seq, snapshot.last_seq)
+          TableState.from_snapshot(snapshot)
+      end
+
+    {:ok, %{table_state: table_state, seq: seq}}
   end
 
   @impl true
@@ -37,6 +49,7 @@ defmodule Roundtable.Session.Server do
       {:ok, ts, delta} ->
         seq = Seq.next(state.seq)
         ts = %{ts | last_seq: seq}
+        Roundtable.StateReplica.put(ts.table_id, TableState.snapshot(ts))
         broadcast(ts.table_id, Map.put(delta, :seq, seq))
         {:reply, {:ok, seq}, %{state | table_state: ts}}
 

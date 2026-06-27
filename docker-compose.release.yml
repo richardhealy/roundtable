@@ -1,0 +1,42 @@
+services:
+  node1:
+    image: roundtable:release
+    hostname: node1
+    environment:
+      MIX_ENV: prod
+      PORT: "4000"
+      PHX_SERVER: "true"
+      PHX_HOST: localhost
+      SECRET_KEY_BASE: Fwiloi7/vfBFyINvzZdy9/MuyRr9PoBQ+F5KJfg9IkB/uE9LRcAoXGOMa/LxrZ7n
+      RELEASE_COOKIE: roundtable-demo
+      ROUNDTABLE_CLUSTER: epmd
+    command: ["bin/server"]
+    ports: ["4001:4000"]
+
+  node2:
+    image: roundtable:release
+    hostname: node2
+    environment:
+      MIX_ENV: prod
+      PORT: "4000"
+      PHX_SERVER: "true"
+      PHX_HOST: localhost
+      SECRET_KEY_BASE: Fwiloi7/vfBFyINvzZdy9/MuyRr9PoBQ+F5KJfg9IkB/uE9LRcAoXGOMa/LxrZ7n
+      RELEASE_COOKIE: roundtable-demo
+      ROUNDTABLE_CLUSTER: epmd
+    command: ["bin/server"]
+    ports: ["4002:4000"]
+
+  node3:
+    image: roundtable:release
+    hostname: node3
+    environment:
+      MIX_ENV: prod
+      PORT: "4000"
+      PHX_SERVER: "true"
+      PHX_HOST: localhost
+      SECRET_KEY_BASE: Fwiloi7/vfBFyINvzZdy9/MuyRr9PoBQ+F5KJfg9IkB/uE9LRcAoXGOMa/LxrZ7n
+      RELEASE_COOKIE: roundtable-demo
+      ROUNDTABLE_CLUSTER: epmd
+    command: ["bin/server"]
+    ports: ["4003:4000"]

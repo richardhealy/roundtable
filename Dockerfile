@@ -52,6 +52,9 @@ COPY priv priv
 
 COPY lib lib
 
+# Native Erlang sources (roundtable_seq.erl) compiled via erlc_paths: ["src"]
+COPY src src
+
 # Compile the release
 RUN mix compile
 

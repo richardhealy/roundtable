@@ -11,8 +11,8 @@ defmodule Roundtable.Application do
       RoundtableWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:roundtable, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Roundtable.PubSub},
-      # Start a worker by calling: Roundtable.Worker.start_link(arg)
-      # {Roundtable.Worker, arg},
+      Roundtable.Session.Registry,
+      Roundtable.Session.Supervisor,
       # Start to serve requests, typically the last entry
       RoundtableWeb.Endpoint
     ]

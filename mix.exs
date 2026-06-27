@@ -17,6 +17,11 @@ defmodule Roundtable.MixProject do
         plt_core_path: "priv/plts",
         plt_add_apps: [:mix],
         flags: [:error_handling, :extra_return, :missing_return]
+      ],
+      docs: [
+        main: "readme",
+        extras: ["README.md"],
+        source_url: "https://github.com/richardhealy/roundtable"
       ]
     ]
   end
@@ -71,7 +76,8 @@ defmodule Roundtable.MixProject do
       {:delta_crdt, "~> 0.6"},
       {:stream_data, "~> 1.1", only: [:dev, :test]},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 

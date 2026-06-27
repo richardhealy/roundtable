@@ -18,8 +18,8 @@ clients resume from the current snapshot.
   table's state is replicated across the cluster (DeltaCrdt), so a session lives
   through an ungraceful `kill -9` of the node it ran on — see below.
 
-Implemented milestones: **M0–M7** (single-node real-time core, distribution and
-node-kill survival, observability, and a load test). Release packaging is M8.
+Implemented milestones: **M0–M8** — single-node real-time core, distribution and
+node-kill survival, observability, a load test, and a production release.
 
 ## Architecture at a glance
 
@@ -137,6 +137,27 @@ machine's Docker VM, so 5k is the documented run.)
 
 Chaos is covered by the M5 node-kill demo above: bring up the 3-node cluster, kill the
 node holding a session, and watch it resume on a survivor with state intact.
+
+## Production release (M8)
+
+Build the production image (multi-stage `mix release`) and run it:
+
+```bash
+docker build -f Dockerfile -t roundtable:release .
+docker run -p 4000:4000 -e SECRET_KEY_BASE=$(mix phx.gen.secret) \
+  -e PHX_HOST=localhost -e PHX_SERVER=true roundtable:release
+```
+
+Run the **release** as a 3-node cluster — distributed Erlang via
+`RELEASE_DISTRIBUTION=sname` (`rel/env.sh.eex`), clustered by libcluster Epmd — so the
+node-kill survival demo runs on the production image, not just dev `mix`:
+
+```bash
+docker compose -f docker-compose.release.yml up   # 3 release nodes on :4001-:4003
+# kill the node holding a session; it resumes on a survivor with state intact
+```
+
+API docs: `mix docs` generates browsable HTML under `doc/`.
 
 ## Layout
 

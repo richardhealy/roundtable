@@ -44,3 +44,6 @@ npm-debug.log
 
 # local design notes (not pushed)
 /docs/
+
+# generated API docs
+/doc/

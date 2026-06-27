@@ -73,7 +73,11 @@ defmodule Roundtable.LoadTest do
   end
 
   defp gc_sessions(ids) do
-    for id <- ids, pid = Session.Registry.whereis(id), is_pid(pid), do: :erlang.garbage_collect(pid)
+    for id <- ids,
+        pid = Session.Registry.whereis(id),
+        is_pid(pid),
+        do: :erlang.garbage_collect(pid)
+
     :ok
   end
 

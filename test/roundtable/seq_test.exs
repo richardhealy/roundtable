@@ -13,7 +13,7 @@ defmodule Roundtable.Session.SeqTest do
   end
 
   property "concurrent next/1 yields exactly 1..total with no gaps or dups" do
-    check all counts <- list_of(integer(1..50), min_length: 1, max_length: 20) do
+    check all(counts <- list_of(integer(1..50), min_length: 1, max_length: 20)) do
       ref = Seq.new()
       total = Enum.sum(counts)
 

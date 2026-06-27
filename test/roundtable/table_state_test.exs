@@ -53,7 +53,7 @@ defmodule Roundtable.TableStateTest do
         constant(:rewind_turn)
       ])
 
-    check all ops <- list_of(intents, max_length: 40) do
+    check all(ops <- list_of(intents, max_length: 40)) do
       final =
         Enum.reduce(ops, TableState.new("t1"), fn intent, ts ->
           case TableState.apply_intent(ts, intent) do

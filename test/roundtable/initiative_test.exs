@@ -29,12 +29,14 @@ defmodule Roundtable.InitiativeTest do
   end
 
   property "advancing `size` times returns to the start; multiset preserved" do
-    check all entries <-
-                uniq_list_of(tuple({string(:alphanumeric, min_length: 1), integer()}),
-                  uniq_fun: &elem(&1, 0),
-                  min_length: 1,
-                  max_length: 12
-                ) do
+    check all(
+            entries <-
+              uniq_list_of(tuple({string(:alphanumeric, min_length: 1), integer()}),
+                uniq_fun: &elem(&1, 0),
+                min_length: 1,
+                max_length: 12
+              )
+          ) do
       {:ok, init} = Initiative.build(entries)
       size = length(entries)
       ids = fn i -> i |> Initiative.to_list() |> Enum.map(& &1.combatant_id) |> Enum.sort() end

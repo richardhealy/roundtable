@@ -56,6 +56,11 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Cluster topologies (libcluster). Empty by default so a lone node does not try to
+# cluster (no warnings in dev/test). The demo cluster enables Gossip at runtime via
+# ROUNDTABLE_CLUSTER=gossip (see config/runtime.exs).
+config :roundtable, :cluster_topologies, []
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

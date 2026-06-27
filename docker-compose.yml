@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+    ports:
+      - "4000:4000"
+    working_dir: /app
+
+volumes:
+  deps:
+  build:

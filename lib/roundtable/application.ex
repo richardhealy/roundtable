@@ -13,6 +13,7 @@ defmodule Roundtable.Application do
       {Phoenix.PubSub, name: Roundtable.PubSub},
       Roundtable.Session.Registry,
       Roundtable.Session.Supervisor,
+      RoundtableWeb.Presence,
       # Start to serve requests, typically the last entry
       RoundtableWeb.Endpoint
     ]

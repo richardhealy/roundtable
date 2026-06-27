@@ -40,4 +40,32 @@ defmodule Roundtable.TelemetryTest do
     assert_receive {:telemetry, [:roundtable, :delta, :broadcast], %{count: 1},
                     %{table_id: "t1", type: :player_joined}}
   end
+
+  describe "active session queries" do
+    alias Roundtable.Session
+
+    test "active_count and active_sessions reflect running tables, dispatch emits count" do
+      id = "t-" <> Integer.to_string(System.unique_integer([:positive]))
+      {:ok, 1} = Session.apply_intent(id, {:join, "amy", %{}})
+      {:ok, 2} = Session.apply_intent(id, {:set_initiative, [{"amy", 18}, {"bob", 9}]})
+
+      assert Telemetry.active_count() >= 1
+      row = Enum.find(Telemetry.active_sessions(), &(&1.table_id == id))
+      assert row.players == 1
+      assert row.current == "amy"
+      assert row.last_seq == 2
+
+      test_pid = self()
+
+      :telemetry.attach(
+        {__MODULE__, :count, make_ref()},
+        [:roundtable, :sessions],
+        fn _n, meas, _meta, _ -> send(test_pid, {:count, meas}) end,
+        nil
+      )
+
+      assert Telemetry.dispatch_session_count() == :ok
+      assert_receive {:count, %{count: n}} when is_integer(n) and n >= 1
+    end
+  end
 end

@@ -56,15 +56,23 @@ defmodule RoundtableWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # roundtable Metrics
+      summary("roundtable.session.intent.stop.duration",
+        unit: {:native, :millisecond},
+        tags: [:result]
+      ),
+      counter("roundtable.session.intent.stop.duration", tags: [:result]),
+      counter("roundtable.session.started.count", tags: [:restored]),
+      counter("roundtable.delta.broadcast.count", tags: [:type]),
+      last_value("roundtable.sessions.count")
     ]
   end
 
   defp periodic_measurements do
     [
-      # A module, function and arguments to be invoked periodically.
-      # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {RoundtableWeb, :count_users, []}
+      {Roundtable.Telemetry, :dispatch_session_count, []}
     ]
   end
 end

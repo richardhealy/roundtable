@@ -27,6 +27,10 @@ defmodule Roundtable.StateReplica do
     @crdt |> DeltaCrdt.to_map() |> Map.get(table_id)
   end
 
+  @doc "Every stored snapshot, keyed by table_id."
+  @spec all() :: %{optional(term()) => map()}
+  def all, do: DeltaCrdt.to_map(@crdt)
+
   @impl true
   def init(:ok) do
     {:ok, crdt} =

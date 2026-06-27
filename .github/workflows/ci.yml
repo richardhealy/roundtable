@@ -27,4 +27,8 @@ jobs:
       - run: mix credo --strict
       - run: mix compile --warnings-as-errors
       - run: mix test
+      # Dialyzer runs in dev so it type-checks the app + deps, not the macro-heavy
+      # Phoenix test scaffolding under test/support (which only compiles in :test).
       - run: mix dialyzer
+        env:
+          MIX_ENV: dev

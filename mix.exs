@@ -15,6 +15,7 @@ defmodule Roundtable.MixProject do
       dialyzer: [
         plt_local_path: "priv/plts",
         plt_core_path: "priv/plts",
+        plt_add_apps: [:mix],
         flags: [:error_handling, :extra_return, :missing_return]
       ]
     ]

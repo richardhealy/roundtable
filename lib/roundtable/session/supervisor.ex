@@ -11,7 +11,7 @@ defmodule Roundtable.Session.Supervisor do
   def init(:ok), do: DynamicSupervisor.init(strategy: :one_for_one)
 
   @doc "Start a session for `table_id` under supervision."
-  @spec start_session(term()) :: {:ok, pid()} | {:error, term()}
+  @spec start_session(term()) :: DynamicSupervisor.on_start_child()
   def start_session(table_id) do
     DynamicSupervisor.start_child(__MODULE__, {Server, table_id})
   end

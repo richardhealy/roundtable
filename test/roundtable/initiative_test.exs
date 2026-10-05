@@ -16,6 +16,12 @@ defmodule Roundtable.InitiativeTest do
     assert Initiative.build([{"amy", 10}, {"amy", 9}]) == {:error, :duplicate_combatant}
   end
 
+  test "build/1 rejects a roll that is not an integer instead of raising" do
+    for bad <- ["18", nil, 18.5, %{}, [18]] do
+      assert Initiative.build([{"amy", 18}, {"bob", bad}]) == {:error, :invalid_roll}
+    end
+  end
+
   test "advance/1 rotates and bumps round on wrap; rewind/1 inverts" do
     {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}])
     i1 = Initiative.advance(i0)

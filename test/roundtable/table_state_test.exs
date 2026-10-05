@@ -32,6 +32,9 @@ defmodule Roundtable.TableStateTest do
     assert delta.type == :initiative_set
     assert hd(delta.payload.order).combatant_id == "amy"
     assert {:error, :empty} = TableState.apply_intent(ts, {:set_initiative, []})
+
+    assert {:error, :invalid_roll} =
+             TableState.apply_intent(ts, {:set_initiative, [{"amy", "18"}, {"bob", 7}]})
   end
 
   test "advance/rewind require initiative and emit turn deltas" do

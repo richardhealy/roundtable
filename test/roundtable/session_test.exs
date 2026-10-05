@@ -94,6 +94,37 @@ defmodule Roundtable.SessionTest do
     assert_receive {[:roundtable, :delta, :broadcast], %{type: :player_joined}}
   end
 
+  test "a non-integer roll is rejected without crashing or restarting the session", %{id: id} do
+    Phoenix.PubSub.subscribe(Roundtable.PubSub, Session.topic(id))
+    {:ok, 1} = Session.apply_intent(id, {:join, "amy", %{}})
+    {:ok, pid} = Session.find_or_start(id)
+
+    assert {:error, :invalid_roll} =
+             Session.apply_intent(id, {:set_initiative, [{"amy", nil}, {"bob", 9}]})
+
+    assert Session.Registry.whereis(id) == pid
+    assert {:ok, 2} = Session.apply_intent(id, {:set_initiative, [{"amy", 18}, {"bob", 9}]})
+    assert_receive {:delta, %{seq: 2, type: :initiative_set}}
+    refute_received {:delta, %{seq: 3}}
+  end
+
+  test "a burst of malformed intents on one table leaves other tables running", %{id: id} do
+    other = id <> "-other"
+    {:ok, 1} = Session.apply_intent(other, {:join, "z", %{}})
+    {:ok, pid_other} = Session.find_or_start(other)
+
+    # More than the supervisor's restart intensity (3 in 5s) if each one crashed.
+    for _ <- 1..5 do
+      assert {:error, :invalid_roll} =
+               Session.apply_intent(id, {:set_initiative, [{"amy", "18"}]})
+    end
+
+    assert Process.alive?(pid_other)
+    assert Session.Registry.whereis(other) == pid_other
+    assert {snapshot, 1} = Session.get_state(other)
+    assert Map.has_key?(snapshot.players, "z")
+  end
+
   test "crashing one table does not disturb another", %{id: id} do
     other = id <> "-other"
     {:ok, pid_a} = Session.find_or_start(id)

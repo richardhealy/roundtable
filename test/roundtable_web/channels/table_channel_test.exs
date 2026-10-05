@@ -42,6 +42,28 @@ defmodule RoundtableWeb.TableChannelTest do
     refute_push "delta", %{type: :turn_advanced}
   end
 
+  test "a set_initiative with a non-integer roll is rejected and the channel stays up",
+       %{id: id} do
+    {:ok, _reply, socket} = connect_and_join("amy", id)
+    Process.flag(:trap_exit, true)
+
+    ref =
+      push(socket, "intent", %{
+        "type" => "set_initiative",
+        "rolls" => [
+          %{"combatant_id" => "amy", "roll" => "18"},
+          %{"combatant_id" => "bob", "roll" => 5}
+        ]
+      })
+
+    assert_reply ref, :error, %{reason: "invalid_roll"}
+    refute_push "delta", %{type: :initiative_set}
+    assert Process.alive?(socket.channel_pid)
+
+    ref = push(socket, "intent", %{"type" => "advance_turn"})
+    assert_reply ref, :error, %{reason: "no_initiative"}
+  end
+
   test "connecting with a bad token is refused" do
     assert :error = connect(UserSocket, %{"token" => "garbage"})
   end

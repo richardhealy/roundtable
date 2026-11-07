@@ -71,6 +71,12 @@ On join the client receives a `"state"` snapshot (`%{state, seq}`); every
 accepted intent broadcasts a `"delta"` carrying a strictly-monotonic `seq`.
 Order/dedupe deltas by `seq` on the client.
 
+A rejected intent replies with `{"reason": ...}` and broadcasts nothing. The
+reasons are `no_initiative`, `not_a_player`, `empty`, `duplicate_combatant`,
+`invalid_roll` (a roll that is not an integer), `bad_initiative` (a roll entry
+that is not an object with `combatant_id` and `roll`) and `unknown_intent`.
+None of these crash the table's process.
+
 ## Distribution & node-kill survival (M5)
 
 Tables are addressable cluster-wide via `Horde.Registry`/`Horde.DynamicSupervisor`,

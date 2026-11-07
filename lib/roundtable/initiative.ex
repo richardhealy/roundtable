@@ -20,29 +20,43 @@ defmodule Roundtable.Initiative do
           leader: term()
         }
 
-  @doc "Build a ring from `{combatant_id, roll}` pairs, ordered by roll desc then id asc."
-  @spec build([{term(), integer()}]) :: {:ok, t()} | {:error, :empty | :duplicate_combatant}
+  @doc """
+  Build a ring from `{combatant_id, roll}` pairs, ordered by roll desc then id asc.
+
+  Rolls arrive from clients, so a roll that is not an integer is rejected with
+  `{:error, :invalid_roll}` rather than raising inside the session process.
+  """
+  @spec build([{term(), integer()}]) ::
+          {:ok, t()} | {:error, :empty | :duplicate_combatant | :invalid_roll}
   def build([]), do: {:error, :empty}
 
   def build(rolls) when is_list(rolls) do
     ids = Enum.map(rolls, &elem(&1, 0))
 
-    if length(Enum.uniq(ids)) != length(ids) do
-      {:error, :duplicate_combatant}
-    else
-      ordered =
-        rolls
-        |> Enum.sort_by(fn {id, roll} -> {-roll, id} end)
-        |> Enum.map(fn {id, roll} -> %{combatant_id: id, roll: roll} end)
+    cond do
+      length(Enum.uniq(ids)) != length(ids) ->
+        {:error, :duplicate_combatant}
 
-      {:ok,
-       %__MODULE__{
-         queue: :queue.from_list(ordered),
-         round: 1,
-         size: length(ordered),
-         leader: hd(ordered).combatant_id
-       }}
+      not Enum.all?(rolls, fn {_id, roll} -> is_integer(roll) end) ->
+        {:error, :invalid_roll}
+
+      true ->
+        {:ok, ring(rolls)}
     end
+  end
+
+  defp ring(rolls) do
+    ordered =
+      rolls
+      |> Enum.sort_by(fn {id, roll} -> {-roll, id} end)
+      |> Enum.map(fn {id, roll} -> %{combatant_id: id, roll: roll} end)
+
+    %__MODULE__{
+      queue: :queue.from_list(ordered),
+      round: 1,
+      size: length(ordered),
+      leader: hd(ordered).combatant_id
+    }
   end
 
   @doc "Rebuild a ring from a snapshot's rotation order (current first) and round."

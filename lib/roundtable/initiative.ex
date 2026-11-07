@@ -5,8 +5,8 @@ defmodule Roundtable.Initiative do
   The front of the queue is whose turn it is. `advance/1` moves the front to
   the back (`:queue.out` + `:queue.in`); `rewind/1` is the inverse
   (`:queue.out_r` + `:queue.in_r`). A `round` counter increments each time the
-  turn returns to the `leader` (the highest-initiative combatant). Pure: no
-  time, no randomness, no process calls.
+  turn returns to the `leader` (the highest-initiative combatant, ties going to
+  the lower combatant id). Pure: no time, no randomness, no process calls.
   """
 
   @enforce_keys [:queue, :round, :size, :leader]
@@ -48,8 +48,8 @@ defmodule Roundtable.Initiative do
   defp ring(rolls) do
     ordered =
       rolls
-      |> Enum.sort_by(fn {id, roll} -> {-roll, id} end)
       |> Enum.map(fn {id, roll} -> %{combatant_id: id, roll: roll} end)
+      |> Enum.sort_by(&turn_order_key/1)
 
     %__MODULE__{
       queue: :queue.from_list(ordered),
@@ -59,16 +59,26 @@ defmodule Roundtable.Initiative do
     }
   end
 
-  @doc "Rebuild a ring from a snapshot's rotation order (current first) and round."
+  @doc """
+  Rebuild a ring from a snapshot's rotation order (current first) and round.
+
+  The leader is chosen with the same rule as `build/1` (highest roll, ties to
+  the lower combatant id), so a restored ring bumps the round on the same turn
+  as the ring it was snapshotted from.
+  """
   @spec restore([entry()], pos_integer()) :: t()
   def restore([_ | _] = order, round) do
     %__MODULE__{
       queue: :queue.from_list(order),
       round: round,
       size: length(order),
-      leader: Enum.max_by(order, & &1.roll).combatant_id
+      leader: Enum.min_by(order, &turn_order_key/1).combatant_id
     }
   end
+
+  # Highest roll first, a tied roll going to the lower combatant id. build/1
+  # sorts by this key and restore/2 picks the leader by it.
+  defp turn_order_key(%{combatant_id: id, roll: roll}), do: {-roll, id}
 
   @doc "The combatant whose turn it currently is."
   @spec current(t()) :: entry()

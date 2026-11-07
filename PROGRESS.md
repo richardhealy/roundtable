@@ -8,6 +8,15 @@ compile with warnings as errors, the test suite and dialyzer on every push.
 
 ## Recent changes
 
+- 2026-11-07: a table restored after its session died could count rounds
+  differently from the live table when the top initiative roll was tied.
+  `Initiative.restore/2` picked the leader with `Enum.max_by` over the rotated
+  order, so with amy 18, bob 18, cat 9 and one advance it chose bob, while
+  `build/1` had chosen amy (ties go to the lower combatant id). The restored
+  table then stayed on round 1 when amy was up again. Both functions now use
+  the same ordering key. A unit test, a property test (restore at any point,
+  then play the same moves on both rings) and a `TableState` snapshot test
+  cover it.
 - 2026-10-06: `set_initiative` with a roll that is not an integer (a string,
   `null`, a float) raised inside the table's GenServer. The table process
   crashed, the calling channel crashed with it, and a handful of these in quick
@@ -18,11 +27,6 @@ compile with warnings as errors, the test suite and dialyzer on every push.
 
 ## Known bugs
 
-- Tied top roll after a restore: `Initiative.restore/2` picks the leader with
-  `Enum.max_by` over the rotated order, while `build/1` breaks ties by
-  combatant id. With rolls amy 18, bob 18, cat 9, a session restored after one
-  advance treats bob as the leader, so the round counter lags by one turn
-  (live ring: round 2 when amy is up again; restored ring: still round 1).
 - Rewinding from the very first turn (round 1, leader up) stays on round 1 but
   moves to the last combatant; advancing again then reports round 2 although no
   full round has passed.

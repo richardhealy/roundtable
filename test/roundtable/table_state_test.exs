@@ -64,6 +64,21 @@ defmodule Roundtable.TableStateTest do
     assert TableState.snapshot(restored) == TableState.snapshot(ts)
   end
 
+  test "a table restored with a tied top roll counts rounds like the live one" do
+    rolls = [{"amy", 18}, {"bob", 18}, {"cat", 9}]
+    {:ok, ts, _} = TableState.apply_intent(TableState.new("t1"), {:set_initiative, rolls})
+    {:ok, ts, _} = TableState.apply_intent(ts, :advance_turn)
+    restored = TableState.from_snapshot(TableState.snapshot(ts))
+
+    {:ok, ts, _} = TableState.apply_intent(ts, :advance_turn)
+    {:ok, _ts, live_delta} = TableState.apply_intent(ts, :advance_turn)
+    {:ok, restored, _} = TableState.apply_intent(restored, :advance_turn)
+    {:ok, _restored, restored_delta} = TableState.apply_intent(restored, :advance_turn)
+
+    assert live_delta.payload == %{current: "amy", round: 2}
+    assert restored_delta.payload == live_delta.payload
+  end
+
   property "any sequence of valid intents keeps players a map and initiative well-formed" do
     intents =
       one_of([

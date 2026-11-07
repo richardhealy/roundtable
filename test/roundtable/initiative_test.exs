@@ -49,6 +49,39 @@ defmodule Roundtable.InitiativeTest do
     assert Initiative.current(Initiative.advance(restored)).combatant_id == "amy"
   end
 
+  test "restore/2 keeps build/1's leader when the top roll is tied" do
+    # amy and bob tie on 18; build/1 breaks the tie by id, so amy leads
+    {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 18}, {"cat", 9}])
+    live = Initiative.advance(i0)
+    restored = Initiative.restore(Initiative.to_list(live), Initiative.round(live))
+
+    # bob -> cat -> amy: the turn is back with the leader, so round 2 on both
+    live = live |> Initiative.advance() |> Initiative.advance()
+    restored = restored |> Initiative.advance() |> Initiative.advance()
+    assert Initiative.current(restored).combatant_id == "amy"
+    assert Initiative.round(live) == 2
+    assert Initiative.round(restored) == 2
+  end
+
+  property "a restored ring plays out the same turns and rounds as the live one" do
+    check all(
+            entries <-
+              uniq_list_of(tuple({string(:alphanumeric, min_length: 1), integer(1..4)}),
+                uniq_fun: &elem(&1, 0),
+                min_length: 1,
+                max_length: 8
+              ),
+            before <- list_of(member_of([:advance, :rewind]), max_length: 20),
+            after_restore <- list_of(member_of([:advance, :rewind]), max_length: 20)
+          ) do
+      {:ok, init} = Initiative.build(entries)
+      live = Enum.reduce(before, init, &step/2)
+      restored = Initiative.restore(Initiative.to_list(live), Initiative.round(live))
+
+      assert trace(restored, after_restore) == trace(live, after_restore)
+    end
+  end
+
   property "advancing `size` times returns to the start; multiset preserved" do
     check all(
             entries <-
@@ -66,5 +99,15 @@ defmodule Roundtable.InitiativeTest do
       assert Initiative.current(looped).combatant_id == Initiative.current(init).combatant_id
       assert ids.(looped) == ids.(init)
     end
+  end
+
+  defp step(:advance, ring), do: Initiative.advance(ring)
+  defp step(:rewind, ring), do: Initiative.rewind(ring)
+
+  # {current combatant, round} after each move
+  defp trace(ring, moves) do
+    moves
+    |> Enum.scan(ring, &step/2)
+    |> Enum.map(&{Initiative.current(&1).combatant_id, Initiative.round(&1)})
   end
 end

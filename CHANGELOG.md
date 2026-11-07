@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-07
+
+### Fixed
+
+- A table restored from the cluster replica now picks the same initiative
+  leader as the live table when the top roll is tied, so both bump the round
+  on the same turn. Before this, `Initiative.restore/2` took the first
+  highest roll in rotation order instead of breaking the tie by combatant id
+  as `build/1` does, and the restored table's round counter fell one behind.
+
 ## 2026-10-06
 
 ### Fixed

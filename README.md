@@ -77,6 +77,11 @@ reasons are `no_initiative`, `not_a_player`, `empty`, `duplicate_combatant`,
 that is not an object with `combatant_id` and `roll`) and `unknown_intent`.
 None of these crash the table's process.
 
+Rewinding on the very first turn of combat (round 1, with the highest roll up)
+changes nothing, because there is no earlier turn. It replies with
+`{"seq": "noop"}` and broadcasts nothing, the same as re-joining a table you are
+already at.
+
 ## Distribution & node-kill survival (M5)
 
 Tables are addressable cluster-wide via `Horde.Registry`/`Horde.DynamicSupervisor`,

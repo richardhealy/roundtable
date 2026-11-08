@@ -34,6 +34,25 @@ defmodule Roundtable.InitiativeTest do
     assert Initiative.round(Initiative.rewind(i2)) == 1
   end
 
+  test "first_turn?/1 holds only for round 1 with the leader up" do
+    {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}])
+    assert Initiative.first_turn?(i0)
+    assert Initiative.first_turn?(Initiative.restore(Initiative.to_list(i0), 1))
+    refute Initiative.first_turn?(Initiative.advance(i0))
+    # amy is up again, but in round 2
+    refute Initiative.first_turn?(i0 |> Initiative.advance() |> Initiative.advance())
+  end
+
+  test "rewind/1 on the very first turn leaves the ring as it is" do
+    {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}, {"cat", 5}])
+    assert Initiative.rewind(i0) == i0
+
+    # no full round has passed, so bob's turn is still round 1
+    i1 = i0 |> Initiative.rewind() |> Initiative.advance()
+    assert Initiative.current(i1).combatant_id == "bob"
+    assert Initiative.round(i1) == 1
+  end
+
   test "restore/2 round-trips a snapshot, preserving rotation and round" do
     {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}, {"cat", 5}])
     advanced = i0 |> Initiative.advance() |> Initiative.advance()
@@ -98,6 +117,31 @@ defmodule Roundtable.InitiativeTest do
       looped = Enum.reduce(1..size, init, fn _, acc -> Initiative.advance(acc) end)
       assert Initiative.current(looped).combatant_id == Initiative.current(init).combatant_id
       assert ids.(looped) == ids.(init)
+    end
+  end
+
+  property "the turn and round always match the number of turns taken" do
+    check all(
+            entries <-
+              uniq_list_of(tuple({string(:alphanumeric, min_length: 1), integer()}),
+                uniq_fun: &elem(&1, 0),
+                min_length: 1,
+                max_length: 8
+              ),
+            moves <- list_of(member_of([:advance, :rewind]), max_length: 30)
+          ) do
+      {:ok, init} = Initiative.build(entries)
+      order = init |> Initiative.to_list() |> Enum.map(& &1.combatant_id)
+      size = length(order)
+
+      # a rewind takes back one turn, but never goes before the first one
+      Enum.reduce(moves, {init, 0}, fn move, {ring, taken} ->
+        ring = step(move, ring)
+        taken = if move == :advance, do: taken + 1, else: max(taken - 1, 0)
+        assert Initiative.current(ring).combatant_id == Enum.at(order, rem(taken, size))
+        assert Initiative.round(ring) == div(taken, size) + 1
+        {ring, taken}
+      end)
     end
   end
 

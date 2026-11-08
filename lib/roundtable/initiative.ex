@@ -4,9 +4,11 @@ defmodule Roundtable.Initiative do
 
   The front of the queue is whose turn it is. `advance/1` moves the front to
   the back (`:queue.out` + `:queue.in`); `rewind/1` is the inverse
-  (`:queue.out_r` + `:queue.in_r`). A `round` counter increments each time the
-  turn returns to the `leader` (the highest-initiative combatant, ties going to
-  the lower combatant id). Pure: no time, no randomness, no process calls.
+  (`:queue.out_r` + `:queue.in_r`), except on the very first turn, where there
+  is nothing to step back to and it leaves the ring alone. A `round` counter
+  increments each time the turn returns to the `leader` (the highest-initiative
+  combatant, ties going to the lower combatant id). Pure: no time, no
+  randomness, no process calls.
   """
 
   @enforce_keys [:queue, :round, :size, :leader]
@@ -104,10 +106,31 @@ defmodule Roundtable.Initiative do
     %{init | queue: rotated, round: round}
   end
 
-  @doc "Step back to the previous combatant, decrementing `round` on wrap (floors at 1)."
+  @doc """
+  True on the very first turn of combat: round 1 with the leader up.
+
+  There is no earlier turn to step back to, so `rewind/1` leaves the ring as it
+  is here.
+  """
+  @spec first_turn?(t()) :: boolean()
+  def first_turn?(%__MODULE__{queue: q, round: r, leader: leader}) do
+    r == 1 and front_id(q) == leader
+  end
+
+  @doc """
+  Step back to the previous combatant, decrementing `round` when the turn moves
+  back past the leader.
+
+  On the very first turn (see `first_turn?/1`) the ring comes back unchanged, so
+  the next `advance/1` is still round 1.
+  """
   @spec rewind(t()) :: t()
-  def rewind(%__MODULE__{queue: q, round: r, leader: leader} = init) do
-    crossing_back = front_id(q) == leader and r > 1
+  def rewind(%__MODULE__{} = init) do
+    if first_turn?(init), do: init, else: step_back(init)
+  end
+
+  defp step_back(%__MODULE__{queue: q, round: r, leader: leader} = init) do
+    crossing_back = front_id(q) == leader
     {{:value, tail}, rest} = :queue.out_r(q)
     rotated = :queue.in_r(tail, rest)
     round = if crossing_back, do: r - 1, else: r

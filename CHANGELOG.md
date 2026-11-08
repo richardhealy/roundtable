@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-08
+
+### Fixed
+
+- Rewinding on the very first turn of combat (round 1, with the leader up) no
+  longer moves the turn to the last combatant. Before this, the next advance
+  reported round 2 although no full round had passed. The rewind is now a
+  no-op: the channel replies `{"seq": "noop"}` and nothing is broadcast.
+
 ## 2026-11-07
 
 ### Fixed

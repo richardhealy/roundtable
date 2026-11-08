@@ -8,6 +8,14 @@ compile with warnings as errors, the test suite and dialyzer on every push.
 
 ## Recent changes
 
+- 2026-11-08: rewinding from the very first turn (round 1, leader up) used to
+  step back to the last combatant while staying on round 1, so the next advance
+  reported round 2 although no full round had passed. `Initiative.rewind/1` now
+  leaves the ring as it is on that turn (new `Initiative.first_turn?/1`), and
+  `TableState` answers the intent with `:noop`, so the session neither uses a
+  sequence number nor broadcasts. A model-based property test (the turn and
+  round always match the number of turns taken, with a rewind never going
+  before the first) plus unit, `TableState` and session tests cover it.
 - 2026-11-07: a table restored after its session died could count rounds
   differently from the live table when the top initiative roll was tied.
   `Initiative.restore/2` picked the leader with `Enum.max_by` over the rotated
@@ -27,9 +35,7 @@ compile with warnings as errors, the test suite and dialyzer on every push.
 
 ## Known bugs
 
-- Rewinding from the very first turn (round 1, leader up) stays on round 1 but
-  moves to the last combatant; advancing again then reports round 2 although no
-  full round has passed.
+- None open.
 
 ## Not done yet
 

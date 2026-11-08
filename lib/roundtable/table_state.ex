@@ -79,8 +79,15 @@ defmodule Roundtable.TableState do
   def apply_intent(%__MODULE__{initiative: init} = ts, :advance_turn),
     do: turn(ts, Initiative.advance(init), :turn_advanced)
 
-  def apply_intent(%__MODULE__{initiative: init} = ts, :rewind_turn),
-    do: turn(ts, Initiative.rewind(init), :turn_rewound)
+  # Rewinding the first turn of combat changes nothing, so it is a no-op (no
+  # seq, no broadcast) rather than a delta that repeats the current turn.
+  def apply_intent(%__MODULE__{initiative: init} = ts, :rewind_turn) do
+    if Initiative.first_turn?(init) do
+      :noop
+    else
+      turn(ts, Initiative.rewind(init), :turn_rewound)
+    end
+  end
 
   defp turn(ts, init, type) do
     payload = %{current: Initiative.current(init).combatant_id, round: Initiative.round(init)}

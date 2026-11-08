@@ -34,6 +34,15 @@ defmodule Roundtable.InitiativeTest do
     assert Initiative.round(Initiative.rewind(i2)) == 1
   end
 
+  test "first_turn?/1 holds only for round 1 with the leader up" do
+    {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}])
+    assert Initiative.first_turn?(i0)
+    assert Initiative.first_turn?(Initiative.restore(Initiative.to_list(i0), 1))
+    refute Initiative.first_turn?(Initiative.advance(i0))
+    # amy is up again, but in round 2
+    refute Initiative.first_turn?(i0 |> Initiative.advance() |> Initiative.advance())
+  end
+
   test "rewind/1 on the very first turn leaves the ring as it is" do
     {:ok, i0} = Initiative.build([{"amy", 18}, {"bob", 12}, {"cat", 5}])
     assert Initiative.rewind(i0) == i0

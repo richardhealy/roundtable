@@ -48,6 +48,16 @@ defmodule Roundtable.TableStateTest do
     assert d2.payload.current == "amy"
   end
 
+  test "rewinding the first turn of combat is a no-op" do
+    rolls = [{"amy", 18}, {"bob", 12}, {"cat", 5}]
+    {:ok, ts, _} = TableState.apply_intent(TableState.new("t1"), {:set_initiative, rolls})
+    assert TableState.apply_intent(ts, :rewind_turn) == :noop
+
+    {:ok, ts, _} = TableState.apply_intent(ts, :advance_turn)
+    {:ok, _ts, delta} = TableState.apply_intent(ts, :rewind_turn)
+    assert delta.payload == %{current: "amy", round: 1}
+  end
+
   test "from_snapshot/1 inverts snapshot/1" do
     ts = TableState.new("t1")
     {:ok, ts, _} = TableState.apply_intent(ts, {:join, "amy", %{x: 1}})

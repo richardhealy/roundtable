@@ -36,6 +36,17 @@ defmodule Roundtable.SessionTest do
     refute_received {:delta, %{seq: 3}}
   end
 
+  test "rewinding the first turn of combat neither consumes seq nor broadcasts", %{id: id} do
+    Phoenix.PubSub.subscribe(Roundtable.PubSub, Session.topic(id))
+    {:ok, 1} = Session.apply_intent(id, {:set_initiative, [{"amy", 18}, {"bob", 9}]})
+    assert {:ok, :noop} = Session.apply_intent(id, :rewind_turn)
+    assert {:ok, 2} = Session.apply_intent(id, :advance_turn)
+
+    assert_receive {:delta, %{seq: 1, type: :initiative_set}}
+    assert_receive {:delta, %{seq: 2, type: :turn_advanced, payload: payload}}
+    assert payload == %{current: "bob", round: 1}
+  end
+
   test "get_state returns snapshot + current seq", %{id: id} do
     {:ok, 1} = Session.apply_intent(id, {:join, "amy", %{}})
     {snapshot, seq} = Session.get_state(id)

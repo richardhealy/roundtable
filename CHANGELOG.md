@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-09
+
+### Fixed
+
+- A message on any channel event other than `"intent"` no longer crashes the
+  player's channel process. It gets an error reply with the reason
+  `unknown_event`, and the player stays in Presence.
+- A `set_initiative` intent whose `rolls` is missing or not a list is rejected
+  with `bad_initiative` instead of `unknown_intent`.
+
 ## 2026-11-08
 
 ### Fixed

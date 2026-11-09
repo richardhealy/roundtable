@@ -73,9 +73,12 @@ Order/dedupe deltas by `seq` on the client.
 
 A rejected intent replies with `{"reason": ...}` and broadcasts nothing. The
 reasons are `no_initiative`, `not_a_player`, `empty`, `duplicate_combatant`,
-`invalid_roll` (a roll that is not an integer), `bad_initiative` (a roll entry
-that is not an object with `combatant_id` and `roll`) and `unknown_intent`.
-None of these crash the table's process.
+`invalid_roll` (a roll that is not an integer), `bad_initiative` (a
+`set_initiative` whose `rolls` is missing, is not a list, or has an entry that
+is not an object with `combatant_id` and `roll`) and `unknown_intent` (a `type`
+the server does not know). None of these crash the table's process. A message
+on any event other than `"intent"` gets an error reply with the reason
+`unknown_event`, and the channel stays open.
 
 Rewinding on the very first turn of combat (round 1, with the highest roll up)
 changes nothing, because there is no earlier turn. It replies with

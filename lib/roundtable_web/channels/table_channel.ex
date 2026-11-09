@@ -48,6 +48,12 @@ defmodule RoundtableWeb.TableChannel do
     end
   end
 
+  # Clients only send "intent". Without this clause any other event name would
+  # crash the channel process (no matching handle_in/3), and Presence would drop
+  # the player until the client rejoined.
+  def handle_in(_event, _payload, socket),
+    do: {:reply, {:error, %{reason: "unknown_event"}}, socket}
+
   defp reply_for({:ok, :noop}, socket), do: {:reply, {:ok, %{seq: "noop"}}, socket}
   defp reply_for({:ok, seq}, socket), do: {:reply, {:ok, %{seq: seq}}, socket}
 
@@ -65,6 +71,10 @@ defmodule RoundtableWeb.TableChannel do
   rescue
     _ -> {:error, :bad_initiative}
   end
+
+  # A set_initiative whose rolls are missing or not a list is a malformed
+  # initiative, not an intent type the server does not know.
+  defp decode_intent(%{"type" => "set_initiative"}, _pid), do: {:error, :bad_initiative}
 
   defp decode_intent(_payload, _pid), do: {:error, :unknown_intent}
 end

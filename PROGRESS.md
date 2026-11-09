@@ -8,6 +8,15 @@ compile with warnings as errors, the test suite and dialyzer on every push.
 
 ## Recent changes
 
+- 2026-11-09: the table channel had no `handle_in/3` clause for events other
+  than `"intent"`, so a client that pushed any other event (a typo, or a
+  `"chat"` the server does not support) crashed its own channel process, and
+  Presence dropped the player until the client rejoined. Such events now get an
+  error reply with the reason `unknown_event` and the channel stays up. A
+  `set_initiative` whose `rolls` was missing or not a list was answered as
+  `unknown_intent`, as if the type itself were unknown; it is now
+  `bad_initiative`, as the README describes. Channel tests cover both, plus the
+  `unknown_intent` and bad roll entry replies, which had no channel test.
 - 2026-11-08: rewinding from the very first turn (round 1, leader up) used to
   step back to the last combatant while staying on round 1, so the next advance
   reported round 2 although no full round had passed. `Initiative.rewind/1` now
